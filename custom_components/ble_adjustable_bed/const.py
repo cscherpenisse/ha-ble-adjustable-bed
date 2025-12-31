@@ -1,4 +1,4 @@
-DOMAIN = "ipixel_bklight"
+DOMAIN = "ble_adjustable_bed"
 
 DEVICE_NAME = "BK-Light iPixel"
 MANUFACTURER = "BK-Light"
