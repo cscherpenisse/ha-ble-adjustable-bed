@@ -5,8 +5,8 @@ from homeassistant import config_entries
 from .const import DOMAIN
 
 
-class IPixelBklightConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Config flow for Adjustable-Bed Ble."""
+class BleAdjustableBedConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+    """Config flow for BLE Adjustable Bed."""
 
     VERSION = 1
 
@@ -25,7 +25,7 @@ class IPixelBklightConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ): str,
                 vol.Required(
                     "name",
-                    default="Adjustable-Bed Ble",
+                    default="Adjustable Bed",
                 ): str,
             }
         )
