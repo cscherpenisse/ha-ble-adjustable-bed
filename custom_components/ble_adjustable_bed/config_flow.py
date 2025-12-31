@@ -6,7 +6,7 @@ from .const import DOMAIN
 
 
 class IPixelBklightConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Config flow for BK-Light iPixel."""
+    """Config flow for Adjustable-Bed Ble."""
 
     VERSION = 1
 
@@ -25,7 +25,7 @@ class IPixelBklightConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ): str,
                 vol.Required(
                     "name",
-                    default="BK-Light iPixel",
+                    default="Adjustable-Bed Ble",
                 ): str,
             }
         )
