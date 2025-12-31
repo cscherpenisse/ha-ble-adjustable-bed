@@ -1,0 +1,14 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "BK-Light iPixel",
+        "description": "Select the BK-Light iPixel Bluetooth device",
+        "data": {
+          "address": "Bluetooth device",
+          "name": "Name"
+        }
+      }
+    }
+  }
+}
