@@ -4,54 +4,59 @@ import logging
 from bleak import BleakClient, BleakError
 
 from homeassistant.components.bluetooth import async_ble_device_from_address
-from homeassistant.components.switch import SwitchEntity
+from homeassistant.components.button import ButtonEntity
 
 from .const import (
     DOMAIN,
     DEVICE_NAME,
     MANUFACTURER,
     MODEL,
-    CHARACTERISTIC_UUID,
-    POWER_ON_COMMAND,
-    POWER_OFF_COMMAND,
+    BED_CHAR_UUID,
+    BED_COMMANDS,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    async_add_entities(
-        [
-            IPixelBKLightPowerSwitch(
-                hass,
-                entry,
+    buttons = []
+
+    for key, command in BED_COMMANDS.items():
+        buttons.append(
+            AdjustableBedButton(
+                hass=hass,
+                entry=entry,
+                key=key,
+                name=key.replace("_", " ").title(),
             )
-        ]
-    )
+        )
+
+    async_add_entities(buttons)
 
 
-class IPixelBKLightPowerSwitch(SwitchEntity):
-    _attr_icon = "mdi:led"
-    _attr_has_entity_name = True
+class AdjustableBedButton(ButtonEntity):
+    _attr_icon = "mdi:bed"
 
-    def __init__(self, hass, entry):
+    def __init__(self, hass, entry, key, name):
         self.hass = hass
         self.entry = entry
-        self.address = entry.data["address"]
-        self._attr_name = entry.data["name"]
-        self._attr_is_on = True  # optimistic
+        self.key = key
+        self._attr_name = name
 
         data = hass.data[DOMAIN][entry.entry_id]
-        data["lock"] = asyncio.Lock()
+        if data["lock"] is None:
+            data["lock"] = asyncio.Lock()
 
     @property
     def device_info(self):
         return {
-            "identifiers": {(DOMAIN, self.address)},
+            "identifiers": {(DOMAIN, self.entry.data["address"])},
             "name": DEVICE_NAME,
             "manufacturer": MANUFACTURER,
             "model": MODEL,
-            "connections": {("bluetooth", self.address)},
+            "connections": {
+                ("bluetooth", self.entry.data["address"])
+            },
         }
 
     async def _get_client(self) -> BleakClient:
@@ -62,13 +67,16 @@ class IPixelBKLightPowerSwitch(SwitchEntity):
 
         device = async_ble_device_from_address(
             self.hass,
-            self.address,
+            self.entry.data["address"],
         )
 
         if device is None:
             raise RuntimeError("BLE device not found")
 
-        _LOGGER.debug("Connecting permanently to iPixel %s", self.address)
+        _LOGGER.debug(
+            "Connecting to adjustable bed %s",
+            self.entry.data["address"],
+        )
 
         client = BleakClient(device)
         await client.connect(timeout=15)
@@ -76,36 +84,27 @@ class IPixelBKLightPowerSwitch(SwitchEntity):
         data["client"] = client
         return client
 
-    async def _send_command(self, command: bytearray):
+    async def async_press(self) -> None:
         data = self.hass.data[DOMAIN][self.entry.entry_id]
 
         async with data["lock"]:
             try:
                 client = await self._get_client()
-
                 await client.write_gatt_char(
-                    CHARACTERISTIC_UUID,
-                    command,
+                    BED_CHAR_UUID,
+                    BED_COMMANDS[self.key],
                     response=False,
                 )
-
             except (BleakError, Exception) as err:
-                _LOGGER.error("BLE write failed: %s", err)
-
-                # force reconnect next time
+                _LOGGER.error(
+                    "Failed to send bed command %s: %s",
+                    self.key,
+                    err,
+                )
                 if data["client"]:
                     try:
                         await data["client"].disconnect()
                     except Exception:
                         pass
                     data["client"] = None
-
                 raise
-
-    async def async_turn_on(self, **kwargs):
-        await self._send_command(POWER_ON_COMMAND)
-        self._attr_is_on = True
-
-    async def async_turn_off(self, **kwargs):
-        await self._send_command(POWER_OFF_COMMAND)
-        self._attr_is_on = False
