@@ -2,10 +2,10 @@
   "config": {
     "step": {
       "user": {
-        "title": "BK-Light iPixel",
-        "description": "Select the BK-Light iPixel Bluetooth device",
+        "title": "BLE Adjustable Bed",
+        "description": "Configure your Bluetooth adjustable bed",
         "data": {
-          "address": "Bluetooth device",
+          "address": "Bluetooth MAC address",
           "name": "Name"
         }
       }
