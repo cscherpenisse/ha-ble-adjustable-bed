@@ -1,8 +1,8 @@
 {
   "domain": "ble_adjustable_bed",
-  "name": "BK-Light iPixel",
+  "name": "Adjustable-Bed Ble",
   "version": "0.1.0",
-  "documentation": "https://github.com/cscherpenisse/ha-ipixel-bklight",
+  "documentation": "https://github.com/cscherpenisse/ha-ble-adjustable-bed",
   "requirements": [],
   "dependencies": ["bluetooth"],
   "codeowners": ["@cscherpenisse"],
