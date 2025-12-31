@@ -3,7 +3,7 @@ from homeassistant.config_entries import ConfigEntry
 
 from .const import DOMAIN
 
-PLATFORMS = ["button"]
+PLATFORMS = ["button", "cover"]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
