@@ -1,5 +1,5 @@
 {
-  "domain": "ipixel_bklight",
+  "domain": "ble_adjustable_bed",
   "name": "BK-Light iPixel",
   "version": "0.1.0",
   "documentation": "https://github.com/cscherpenisse/ha-ipixel-bklight",
