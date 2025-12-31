@@ -1,7 +1,7 @@
 {
   "domain": "ble_adjustable_bed",
-  "name": "Adjustable-Bed Ble",
-  "version": "0.1.0",
+  "name": "BLE Adjustable Bed",
+  "version": "0.1.1",
   "documentation": "https://github.com/cscherpenisse/ha-ble-adjustable-bed",
   "requirements": [],
   "dependencies": ["bluetooth"],
