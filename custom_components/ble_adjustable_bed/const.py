@@ -1,13 +1,20 @@
 DOMAIN = "ble_adjustable_bed"
 
-DEVICE_NAME = "Adjustable-Bed Ble"
-MANUFACTURER = "Galaxy"
-MODEL = "26W-N"
+DEVICE_NAME = "Adjustable Bed"
+MANUFACTURER = "Sleepmotion / OEM"
+MODEL = "BLE Adjustable Bed"
 
-# BLE UUIDs (afkomstig uit ESPHome)
-SERVICE_UUID = "0000fee9-0000-1000-8000-00805f9b34fb"
-CHARACTERISTIC_UUID = "d44bc439-abfd-45a2-b575-925416129600"
+# BLE UUIDs
+BED_SERVICE_UUID = "0000fee9-0000-1000-8000-00805f9b34fb"
+BED_CHAR_UUID = "d44bc439-abfd-45a2-b575-925416129600"
 
-# Power commands zg and flad
-POWER_ON_COMMAND = bytearray([0x6e, 0x01, 0x00, 0x45, 0xb4])
-POWER_OFF_COMMAND = bytearray([0x6e, 0x01, 0x00, 0x24, 0x93])
+# Bed commands (5 bytes each)
+BED_COMMANDS = {
+    "light": bytearray([0x6E, 0x01, 0x00, 0x3C, 0xAB]),
+    "zero_gravity": bytearray([0x6E, 0x01, 0x00, 0x45, 0xB4]),
+    "flat": bytearray([0x6E, 0x01, 0x00, 0x31, 0xA0]),
+    "head_up": bytearray([0x6E, 0x01, 0x00, 0x24, 0x93]),
+    "head_down": bytearray([0x6E, 0x01, 0x00, 0x25, 0x94]),
+    "feet_up": bytearray([0x6E, 0x01, 0x00, 0x26, 0x95]),
+    "feet_down": bytearray([0x6E, 0x01, 0x00, 0x27, 0x96]),
+}
