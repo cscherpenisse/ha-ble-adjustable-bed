@@ -1,6 +1,6 @@
 {
-  "name": "Adjustable-Bed Ble",
+  "name": "BLE Adjustable Bed",
   "content_in_root": false,
   "render_readme": true,
-  "domains": ["switch"]
+  "domains": ["button"]
 }
