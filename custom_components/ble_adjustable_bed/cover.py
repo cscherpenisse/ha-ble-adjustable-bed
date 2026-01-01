@@ -134,34 +134,47 @@ class AdjustableBedCover(CoverEntity):
                         pass
                     data["client"] = None
                 raise
+async def _move_to_position(self, target: int):
+    """Simulate movement to target position without oscillation."""
+    if self._is_moving:
+        return
 
-    async def _move_to_position(self, target: int):
-        """Simulate movement to target position."""
-        if self._is_moving:
+    self._is_moving = True
+
+    try:
+        target = max(0, min(100, target))
+        current = self._attr_current_cover_position
+
+        if current == target:
             return
 
-        self._is_moving = True
+        moving_up = target > current
 
-        try:
-            target = max(0, min(100, target))
+        while True:
+            if moving_up:
+                if self._attr_current_cover_position >= target:
+                    break
+                await self._send_command(self._up_cmd)
+                self._attr_current_cover_position += COVER_MOVE_STEP
+            else:
+                if self._attr_current_cover_position <= target:
+                    break
+                await self._send_command(self._down_cmd)
+                self._attr_current_cover_position -= COVER_MOVE_STEP
 
-            while self._attr_current_cover_position != target:
-                if self._attr_current_cover_position < target:
-                    await self._send_command(self._up_cmd)
-                    self._attr_current_cover_position += COVER_MOVE_STEP
-                else:
-                    await self._send_command(self._down_cmd)
-                    self._attr_current_cover_position -= COVER_MOVE_STEP
+            self._attr_current_cover_position = max(
+                0, min(100, self._attr_current_cover_position)
+            )
 
-                self._attr_current_cover_position = max(
-                    0, min(100, self._attr_current_cover_position)
-                )
+            self.async_write_ha_state()
+            await asyncio.sleep(COVER_MOVE_DELAY)
 
-                self.async_write_ha_state()
-                await asyncio.sleep(COVER_MOVE_DELAY)
+        # Snap exactly to target at the end
+        self._attr_current_cover_position = target
+        self.async_write_ha_state()
 
-        finally:
-            self._is_moving = False
+    finally:
+        self._is_moving = False
 
     async def async_open_cover(self, **kwargs):
         """Fully open (raise) the cover."""
