@@ -62,6 +62,7 @@ class AdjustableBedCover(CoverEntity):
         self.hass = hass
         self.entry = entry
         self._attr_name = f"{DEVICE_NAME} {name}"
+
         self._up_cmd = up_cmd
         self._down_cmd = down_cmd
 
@@ -79,6 +80,13 @@ class AdjustableBedCover(CoverEntity):
                 ("bluetooth", self.entry.data["address"])
             },
         }
+
+    @property
+    def is_closed(self):
+        """Return True if the cover is closed."""
+        if self._attr_current_cover_position is None:
+            return None
+        return self._attr_current_cover_position == 0
 
     async def _get_client(self) -> BleakClient:
         """Get or create a persistent BLE client."""
