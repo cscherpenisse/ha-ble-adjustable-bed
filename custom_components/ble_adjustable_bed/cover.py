@@ -134,15 +134,16 @@ class AdjustableBedCover(CoverEntity):
                         pass
                     data["client"] = None
                 raise
+
 async def _move_to_position(self, target: int):
-    """Simulate movement to target position without oscillation."""
-    if self._is_moving:
-        return
+    """Move cover to target position, cancelling previous movement."""
+    target = max(0, min(100, target))
 
-    self._is_moving = True
+    # Cancel any ongoing movement
+    if self._move_task and not self._move_task.done():
+        self._move_task.cancel()
 
-    try:
-        target = max(0, min(100, target))
+    async def _run():
         current = self._attr_current_cover_position
 
         if current == target:
@@ -150,44 +151,31 @@ async def _move_to_position(self, target: int):
 
         moving_up = target > current
 
-        while True:
-            if moving_up:
-                if self._attr_current_cover_position >= target:
-                    break
-                await self._send_command(self._up_cmd)
-                self._attr_current_cover_position += COVER_MOVE_STEP
-            else:
-                if self._attr_current_cover_position <= target:
-                    break
-                await self._send_command(self._down_cmd)
-                self._attr_current_cover_position -= COVER_MOVE_STEP
+        try:
+            while True:
+                if moving_up:
+                    if self._attr_current_cover_position >= target:
+                        break
+                    await self._send_command(self._up_cmd)
+                    self._attr_current_cover_position += COVER_MOVE_STEP
+                else:
+                    if self._attr_current_cover_position <= target:
+                        break
+                    await self._send_command(self._down_cmd)
+                    self._attr_current_cover_position -= COVER_MOVE_STEP
 
-            self._attr_current_cover_position = max(
-                0, min(100, self._attr_current_cover_position)
-            )
+                self._attr_current_cover_position = max(
+                    0, min(100, self._attr_current_cover_position)
+                )
 
+                self.async_write_ha_state()
+                await asyncio.sleep(COVER_MOVE_DELAY)
+
+            # Snap to exact target
+            self._attr_current_cover_position = target
             self.async_write_ha_state()
-            await asyncio.sleep(COVER_MOVE_DELAY)
 
-        # Snap exactly to target at the end
-        self._attr_current_cover_position = target
-        self.async_write_ha_state()
+        except asyncio.CancelledError:
+            _LOGGER.debug("Cover movement cancelled")
 
-    finally:
-        self._is_moving = False
-
-    async def async_open_cover(self, **kwargs):
-        """Fully open (raise) the cover."""
-        await self._move_to_position(100)
-
-    async def async_close_cover(self, **kwargs):
-        """Fully close (lower) the cover."""
-        await self._move_to_position(0)
-
-    async def async_set_cover_position(self, **kwargs):
-        """Move cover to a specific position."""
-        position = kwargs.get("position")
-        if position is None:
-            return
-
-        await self._move_to_position(position)
+    self._move_task = None
