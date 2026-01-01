@@ -15,6 +15,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+# Platforms that this integration provides
 PLATFORMS = ["button", "cover"]
 
 
@@ -28,8 +29,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "lock": asyncio.Lock(),
     }
 
-    async def handle_repeat_command(call: ServiceCall):
-        """Repeat a bed command multiple times (hold button)."""
+    async def handle_repeat_command(call: ServiceCall) -> None:
+        """Repeat a bed command multiple times (hold button behavior)."""
         command = call.data["command"]
         count = call.data.get("count", 5)
         delay_ms = call.data.get("delay_ms", 300)
@@ -44,7 +45,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 raise RuntimeError("BLE device not found")
 
             if not data["client"] or not data["client"].is_connected:
-                _LOGGER.debug("Connecting to bed for repeat command")
+                _LOGGER.debug("Connecting to adjustable bed (repeat command)")
                 data["client"] = BleakClient(device)
                 await data["client"].connect(timeout=15)
 
@@ -56,15 +57,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 )
                 await asyncio.sleep(delay_ms / 1000)
 
+    # Register service for hold / repeat behavior
     hass.services.async_register(
         DOMAIN,
         "repeat_command",
         handle_repeat_command,
     )
 
+    # Forward setup to platforms (button, cover)
     await hass.config_entries.async_forward_entry_setups(
         entry, PLATFORMS
     )
+
     return True
 
 
@@ -72,12 +76,14 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     data = hass.data[DOMAIN].get(entry.entry_id)
 
+    # Disconnect BLE client if connected
     if data and data.get("client"):
         try:
             await data["client"].disconnect()
         except Exception:
             pass
 
+    # Unload platforms
     await hass.config_entries.async_unload_platforms(
         entry, PLATFORMS
     )
