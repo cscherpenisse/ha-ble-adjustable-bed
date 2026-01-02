@@ -1,11 +1,12 @@
 import voluptuous as vol
 
 from homeassistant import config_entries
+from homeassistant.core import callback
 
 from .const import DOMAIN
 
 
-class BleAdjustableBedConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+class AdjustableBedConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Config flow for BLE Adjustable Bed."""
 
     VERSION = 1
@@ -14,23 +15,18 @@ class BleAdjustableBedConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             return self.async_create_entry(
                 title=user_input["name"],
-                data=user_input,
+                data={
+                    "address": user_input["address"],
+                    "name": user_input["name"],
+                },
             )
-
-        schema = vol.Schema(
-            {
-                vol.Required(
-                    "address",
-                    description={"suggested_value": ""},
-                ): str,
-                vol.Required(
-                    "name",
-                    default="Bed from ??",
-                ): str,
-            }
-        )
 
         return self.async_show_form(
             step_id="user",
-            data_schema=schema,
+            data_schema=vol.Schema(
+                {
+                    vol.Required("name", default="Adjustable Bed"): str,
+                    vol.Required("address"): str,
+                }
+            ),
         )
