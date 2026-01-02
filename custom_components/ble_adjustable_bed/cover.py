@@ -14,7 +14,7 @@ from .const import (
     HEAD_DOWN_CMD,
     FEET_UP_CMD,
     FEET_DOWN_CMD,
-    COVER_MOVE_DELAY,
+    COVER_MOVE_DELAY_MS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -90,7 +90,7 @@ class AdjustableBedCover(CoverEntity):
             {
                 "command": command,
                 "count": steps,
-                "delay_ms": COVER_MOVE_DELAY,
+                "delay_ms": COVER_MOVE_DELAY_MS,
             },
             blocking=True,
         )
