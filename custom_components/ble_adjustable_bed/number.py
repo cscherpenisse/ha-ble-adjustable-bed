@@ -26,6 +26,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
 
 class BedStepsNumber(NumberEntity):
+    """Number entity to control amount of movement steps."""
+
     _attr_min_value = 1
     _attr_max_value = 1000
     _attr_step = 1
@@ -35,7 +37,7 @@ class BedStepsNumber(NumberEntity):
         self.entry = entry
         self._attr_name = f"{DEVICE_NAME} {name}"
         self._attr_unique_id = f"{entry.entry_id}_{object_id}"
-        self._attr_native_value = 10
+        self._attr_native_value = 10  # default
 
     @property
     def device_info(self):
@@ -45,3 +47,8 @@ class BedStepsNumber(NumberEntity):
             "manufacturer": MANUFACTURER,
             "model": MODEL,
         }
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Handle value updates from Home Assistant."""
+        self._attr_native_value = int(value)
+        self.async_write_ha_state()
