@@ -78,7 +78,7 @@ class AdjustableBedCover(CoverEntity):
         state = self.hass.states.get(entity_id)
 
         if not state or state.state in ("unknown", "unavailable"):
-            fallback = 10 * STEP_MULTIPLIER
+            fallback = 100 * STEP_MULTIPLIER
             _LOGGER.debug(
                 "Steps entity unavailable, using fallback: %d", fallback
             )
