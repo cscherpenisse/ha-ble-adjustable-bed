@@ -87,7 +87,7 @@ class AdjustableBedCover(CoverEntity):
             {
                 "command": command,
                 "count": steps,
-                "delay_ms": 150,
+                "delay_ms": COVER_MOVE_DELAY,
             },
             blocking=True,
         )
