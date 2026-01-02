@@ -13,6 +13,7 @@ COVER_MOVE_STEP = 1          # % per actie
 COVER_MOVE_DELAY = 0.15      # seconden
 COVER_MOVE_DELAY_MS = 100    # miliseconds
 STEP_MULTIPLIER = 5          # input.number x step multiplier
+BLE_IDLE_DISCONNECT_TIMEOUT = 30  # seconden
 
 HEAD_UP_CMD = "head_up"
 HEAD_DOWN_CMD = "head_down"
