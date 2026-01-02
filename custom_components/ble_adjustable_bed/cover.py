@@ -135,32 +135,21 @@ class AdjustableBedCover(CoverEntity):
                     data["client"] = None
                 raise
 
-async def _move_to_position(self, target: int):
-    """Move cover to target position, cancelling previous movement."""
-    target = max(0, min(100, target))
-
-    # Cancel any ongoing movement
-    if self._move_task and not self._move_task.done():
-        self._move_task.cancel()
-
-    async def _run():
-        current = self._attr_current_cover_position
-
-        if current == target:
+    async def _move_to_position(self, target: int):
+        """Simulate movement to target position."""
+        if self._is_moving:
             return
 
-        moving_up = target > current
+        self._is_moving = True
 
         try:
-            while True:
-                if moving_up:
-                    if self._attr_current_cover_position >= target:
-                        break
+            target = max(0, min(100, target))
+
+            while self._attr_current_cover_position != target:
+                if self._attr_current_cover_position < target:
                     await self._send_command(self._up_cmd)
                     self._attr_current_cover_position += COVER_MOVE_STEP
                 else:
-                    if self._attr_current_cover_position <= target:
-                        break
                     await self._send_command(self._down_cmd)
                     self._attr_current_cover_position -= COVER_MOVE_STEP
 
@@ -171,11 +160,21 @@ async def _move_to_position(self, target: int):
                 self.async_write_ha_state()
                 await asyncio.sleep(COVER_MOVE_DELAY)
 
-            # Snap to exact target
-            self._attr_current_cover_position = target
-            self.async_write_ha_state()
+        finally:
+            self._is_moving = False
 
-        except asyncio.CancelledError:
-            _LOGGER.debug("Cover movement cancelled")
+    async def async_open_cover(self, **kwargs):
+        """Fully open (raise) the cover."""
+        await self._move_to_position(100)
 
-    self._move_task = None
+    async def async_close_cover(self, **kwargs):
+        """Fully close (lower) the cover."""
+        await self._move_to_position(0)
+
+    async def async_set_cover_position(self, **kwargs):
+        """Move cover to a specific position."""
+        position = kwargs.get("position")
+        if position is None:
+            return
+
+        await self._move_to_position(position)
