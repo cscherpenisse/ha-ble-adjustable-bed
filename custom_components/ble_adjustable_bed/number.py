@@ -30,7 +30,7 @@ class BedStepsNumber(NumberEntity):
     """Number entity to control movement steps."""
 
     _attr_min_value = 1
-    _attr_max_value = 1000
+    _attr_max_value = 100
     _attr_step = 1
     _attr_mode = "box"
     _attr_has_entity_name = True
@@ -48,7 +48,7 @@ class BedStepsNumber(NumberEntity):
         self.entity_id = f"number.adjustable_bed_{entity_id_suffix}"
 
         # Default value
-        self._attr_native_value = 10
+        self._attr_native_value = 100
 
     @property
     def device_info(self):
