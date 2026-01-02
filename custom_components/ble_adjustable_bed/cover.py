@@ -21,6 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
+    """Set up cover entities."""
     async_add_entities(
         [
             AdjustableBedCover(
@@ -44,7 +45,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
 
 class AdjustableBedCover(CoverEntity):
-    """Cover controlled via step count from NumberEntity."""
+    """Adjustable bed cover (no position, step based)."""
 
     _attr_supported_features = (
         CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE
@@ -67,22 +68,21 @@ class AdjustableBedCover(CoverEntity):
             "model": MODEL,
         }
 
-def _get_steps(self) -> int:
-    entity_id = f"number.adjustable_bed_{self._steps_key}_steps"
-    state = self.hass.states.get(entity_id)
+    def _get_steps(self) -> int:
+        entity_id = f"number.adjustable_bed_{self._steps_key}_steps"
+        state = self.hass.states.get(entity_id)
 
-    if state is None or state.state in ("unknown", "unavailable"):
-        return 10
+        if not state or state.state in ("unknown", "unavailable"):
+            return 100
 
-    try:
-        return int(float(state.state))
-    except ValueError:
-        return 10
-
+        try:
+            return int(float(state.state))
+        except ValueError:
+            return 100
 
     async def _repeat(self, command):
         steps = self._get_steps()
-        _LOGGER.debug("Executing %s for %d steps", command, steps)
+        _LOGGER.debug("Running %s for %d steps", command, steps)
 
         await self.hass.services.async_call(
             DOMAIN,
