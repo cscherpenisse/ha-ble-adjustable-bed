@@ -23,19 +23,21 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
 
 class BedStepsNumber(NumberEntity):
-    """Number entity to control amount of movement steps."""
-
     _attr_min_value = 1
     _attr_max_value = 100
     _attr_step = 1
     _attr_mode = "box"
+    _attr_has_entity_name = True
 
-    def __init__(self, entry, name, key):
+    def __init__(self, entry, name, entity_id_suffix):
         self.entry = entry
-        self.key = key
-        self._attr_name = f"{DEVICE_NAME} {name}"
-        self._attr_unique_id = f"{entry.entry_id}_{key}_steps"
+        self._attr_name = name
+        self._attr_unique_id = f"{entry.entry_id}_{entity_id_suffix}"
         self._attr_native_value = 100
+
+        # 🔑 EXPLICIETE entity_id
+        self.entity_id = f"number.adjustable_bed_{entity_id_suffix}"
+
 
 
     @property
