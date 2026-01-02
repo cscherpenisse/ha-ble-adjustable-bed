@@ -10,6 +10,7 @@ from .const import (
     DEVICE_NAME,
     MANUFACTURER,
     MODEL,
+    STEP_MULTIPLIER,
     HEAD_UP_CMD,
     HEAD_DOWN_CMD,
     FEET_UP_CMD,
@@ -21,20 +22,20 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    """Set up cover entities."""
+    """Set up adjustable bed covers."""
     async_add_entities(
         [
             AdjustableBedCover(
-                hass,
-                entry,
+                hass=hass,
+                entry=entry,
                 name="Head",
                 up_cmd=HEAD_UP_CMD,
                 down_cmd=HEAD_DOWN_CMD,
                 steps_key="head",
             ),
             AdjustableBedCover(
-                hass,
-                entry,
+                hass=hass,
+                entry=entry,
                 name="Feet",
                 up_cmd=FEET_UP_CMD,
                 down_cmd=FEET_DOWN_CMD,
@@ -45,7 +46,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
 
 class AdjustableBedCover(CoverEntity):
-    """Adjustable bed cover (no position, step based)."""
+    """Step-based adjustable bed cover."""
 
     _attr_supported_features = (
         CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE
@@ -69,15 +70,46 @@ class AdjustableBedCover(CoverEntity):
         }
 
     def _get_steps(self) -> int:
-        for state in self.hass.states.async_all("number"):
-            if state.attributes.get("friendly_name") == f"{DEVICE_NAME} Head Steps":
-                return int(float(state.state))
-        return 500
+        """
+        Read step count from number entity and apply multiplier.
+        UI range stays 1–100, real steps = value × STEP_MULTIPLIER
+        """
+        entity_id = f"number.adjustable_bed_{self._steps_key}_steps"
+        state = self.hass.states.get(entity_id)
 
+        if not state or state.state in ("unknown", "unavailable"):
+            fallback = 10 * STEP_MULTIPLIER
+            _LOGGER.debug(
+                "Steps entity unavailable, using fallback: %d", fallback
+            )
+            return fallback
+
+        try:
+            base_steps = int(float(state.state))
+            scaled_steps = base_steps * STEP_MULTIPLIER
+
+            _LOGGER.debug(
+                "Using %d base steps × %d = %d total steps",
+                base_steps,
+                STEP_MULTIPLIER,
+                scaled_steps,
+            )
+            return scaled_steps
+        except ValueError:
+            fallback = 10 * STEP_MULTIPLIER
+            _LOGGER.warning(
+                "Invalid step value '%s', using fallback: %d",
+                state.state,
+                fallback,
+            )
+            return fallback
 
     async def _repeat(self, command):
         steps = self._get_steps()
-        _LOGGER.debug("Running %s for %d steps", command, steps)
+
+        _LOGGER.info(
+            "Executing command %s for %d steps", command, steps
+        )
 
         await self.hass.services.async_call(
             DOMAIN,
@@ -91,11 +123,14 @@ class AdjustableBedCover(CoverEntity):
         )
 
     async def async_open_cover(self, **kwargs):
+        """Move bed part up."""
         await self._repeat(self._up_cmd)
 
     async def async_close_cover(self, **kwargs):
+        """Move bed part down."""
         await self._repeat(self._down_cmd)
 
     @property
     def is_closed(self):
+        """Unknown state (no position feedback)."""
         return None
