@@ -11,6 +11,7 @@ BED_CHAR_UUID = "d44bc439-abfd-45a2-b575-925416129600"
 # Simulated movement
 COVER_MOVE_STEP = 1          # % per actie
 COVER_MOVE_DELAY = 0.15      # seconden
+COVER_MOVE_DELAY_MS = 100    # miliseconds
 
 HEAD_UP_CMD = "head_up"
 HEAD_DOWN_CMD = "head_down"
