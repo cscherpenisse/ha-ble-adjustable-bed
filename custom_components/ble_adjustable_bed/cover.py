@@ -63,11 +63,17 @@ class AdjustableBedCover(CoverEntity):
     @property
     def device_info(self):
         return {
-            "identifiers": {(DOMAIN, self.entry.data["address"])},
+            "identifiers": {
+                (DOMAIN, self.entry.entry_id)
+            },
             "name": DEVICE_NAME,
             "manufacturer": MANUFACTURER,
             "model": MODEL,
+            "connections": {
+                ("bluetooth", self.entry.data["address"])
+            },
         }
+
 
     def _get_steps(self) -> int:
         """
