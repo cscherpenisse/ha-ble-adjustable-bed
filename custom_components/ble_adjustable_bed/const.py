@@ -1,8 +1,8 @@
 DOMAIN = "ble_adjustable_bed"
 
 DEVICE_NAME = "Adjustable Bed"
-MANUFACTURER = "Sleepmotion / OEM"
-MODEL = "BLE Adjustable Bed"
+MANUFACTURER = "Galaxy"
+MODEL = "26W-N"
 
 # BLE UUIDs
 BED_SERVICE_UUID = "0000fee9-0000-1000-8000-00805f9b34fb"
