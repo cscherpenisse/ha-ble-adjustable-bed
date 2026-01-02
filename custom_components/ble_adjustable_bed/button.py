@@ -50,7 +50,9 @@ class AdjustableBedButton(ButtonEntity):
     @property
     def device_info(self):
         return {
-            "identifiers": {(DOMAIN, self.entry.data["address"])},
+            "identifiers": {
+                (DOMAIN, self.entry.entry_id)
+            },
             "name": DEVICE_NAME,
             "manufacturer": MANUFACTURER,
             "model": MODEL,
