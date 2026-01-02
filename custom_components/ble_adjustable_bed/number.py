@@ -35,10 +35,15 @@ class BedStepsNumber(NumberEntity):
     @property
     def device_info(self):
         return {
-            "identifiers": {(DOMAIN, self.entry.data["address"])},
+            "identifiers": {
+                (DOMAIN, self.entry.entry_id)
+            },
             "name": DEVICE_NAME,
             "manufacturer": MANUFACTURER,
             "model": MODEL,
+            "connections": {
+                ("bluetooth", self.entry.data["address"])
+            },
         }
 
     async def async_set_native_value(self, value: float) -> None:
