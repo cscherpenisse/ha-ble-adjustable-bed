@@ -26,7 +26,7 @@ class BedStepsNumber(NumberEntity):
     """Number entity to control amount of movement steps."""
 
     _attr_min_value = 1
-    _attr_max_value = 1000
+    _attr_max_value = 100
     _attr_step = 1
     _attr_mode = "box"
 
@@ -35,7 +35,7 @@ class BedStepsNumber(NumberEntity):
         self.key = key
         self._attr_name = f"{DEVICE_NAME} {name}"
         self._attr_unique_id = f"{entry.entry_id}_{key}_steps"
-        self._attr_native_value = 10
+        self._attr_native_value = 100
 
 
     @property
