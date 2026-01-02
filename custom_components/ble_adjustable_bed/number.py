@@ -30,7 +30,7 @@ class BedStepsNumber(NumberEntity):
         self.entry = entry
         self._attr_name = name
         self._attr_unique_id = f"{entry.entry_id}_{name.lower().replace(' ', '_')}"
-        self._attr_native_value = 500
+        self._attr_native_value = 100
 
     @property
     def device_info(self):
