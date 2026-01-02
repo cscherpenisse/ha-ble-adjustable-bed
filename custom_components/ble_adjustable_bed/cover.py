@@ -69,16 +69,11 @@ class AdjustableBedCover(CoverEntity):
         }
 
     def _get_steps(self) -> int:
-        entity_id = f"number.adjustable_bed_{self._steps_key}_steps"
-        state = self.hass.states.get(entity_id)
+        for state in self.hass.states.async_all("number"):
+            if state.attributes.get("friendly_name") == f"{DEVICE_NAME} Head Steps":
+                return int(float(state.state))
+        return 500
 
-        if not state or state.state in ("unknown", "unavailable"):
-            return 100
-
-        try:
-            return int(float(state.state))
-        except ValueError:
-            return 100
 
     async def _repeat(self, command):
         steps = self._get_steps()
