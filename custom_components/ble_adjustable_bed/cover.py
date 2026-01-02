@@ -14,6 +14,7 @@ from .const import (
     HEAD_DOWN_CMD,
     FEET_UP_CMD,
     FEET_DOWN_CMD,
+    COVER_MOVE_DELAY,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -66,16 +67,18 @@ class AdjustableBedCover(CoverEntity):
             "model": MODEL,
         }
 
-    def _get_steps(self) -> int:
-        """Read step value from NumberEntity stored in hass.data."""
-        data = self.hass.data[DOMAIN][self.entry.entry_id]
-        numbers = data.get("numbers", {})
+def _get_steps(self) -> int:
+    entity_id = f"number.adjustable_bed_{self._steps_key}_steps"
+    state = self.hass.states.get(entity_id)
 
-        number_entity = numbers.get(self._steps_key)
-        if number_entity is None:
-            return 10
+    if state is None or state.state in ("unknown", "unavailable"):
+        return 10
 
-        return int(number_entity.native_value)
+    try:
+        return int(float(state.state))
+    except ValueError:
+        return 10
+
 
     async def _repeat(self, command):
         steps = self._get_steps()
