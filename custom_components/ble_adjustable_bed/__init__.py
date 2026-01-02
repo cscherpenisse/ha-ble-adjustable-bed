@@ -12,6 +12,7 @@ from .const import (
     BED_CHAR_UUID,
     BED_COMMANDS,
     BLE_IDLE_DISCONNECT_TIMEOUT,
+    COVER_MOVE_DELAY_MS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -63,7 +64,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         """Repeat a BLE command (used for hold behavior)."""
         command = call.data["command"]
         count = call.data.get("count", 1)
-        delay_ms = call.data.get("delay_ms", 300)
+        delay_ms = call.data.get("delay_ms", COVER_MOVE_DELAY_MS)
 
         data = hass.data[DOMAIN][entry.entry_id]
 
