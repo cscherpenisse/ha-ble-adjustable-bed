@@ -1,23 +1,16 @@
 import asyncio
 import logging
 
-from bleak import BleakClient, BleakError
-
 from homeassistant.components.cover import (
     CoverEntity,
     CoverEntityFeature,
 )
-from homeassistant.components.bluetooth import async_ble_device_from_address
 
 from .const import (
     DOMAIN,
     DEVICE_NAME,
     MANUFACTURER,
     MODEL,
-    BED_CHAR_UUID,
-    BED_COMMANDS,
-    COVER_MOVE_STEP,
-    COVER_MOVE_DELAY,
     HEAD_UP_CMD,
     HEAD_DOWN_CMD,
     FEET_UP_CMD,
@@ -28,46 +21,42 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    """Set up cover entities for the adjustable bed."""
     async_add_entities(
         [
             AdjustableBedCover(
-                hass=hass,
-                entry=entry,
+                hass,
+                entry,
                 name="Head",
                 up_cmd=HEAD_UP_CMD,
                 down_cmd=HEAD_DOWN_CMD,
+                steps_entity="number.bed_head_steps",
             ),
             AdjustableBedCover(
-                hass=hass,
-                entry=entry,
+                hass,
+                entry,
                 name="Feet",
                 up_cmd=FEET_UP_CMD,
                 down_cmd=FEET_DOWN_CMD,
+                steps_entity="number.bed_feet_steps",
             ),
         ]
     )
 
 
 class AdjustableBedCover(CoverEntity):
-    """Simulated cover entity for adjustable bed parts."""
+    """Cover without position, step-based movement."""
 
     _attr_supported_features = (
-        CoverEntityFeature.OPEN
-        | CoverEntityFeature.CLOSE
-        | CoverEntityFeature.SET_POSITION
+        CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE
     )
 
-    def __init__(self, hass, entry, name, up_cmd, down_cmd):
+    def __init__(self, hass, entry, name, up_cmd, down_cmd, steps_entity):
         self.hass = hass
         self.entry = entry
         self._attr_name = f"{DEVICE_NAME} {name}"
-
         self._up_cmd = up_cmd
         self._down_cmd = down_cmd
-
-        self._attr_current_cover_position = 0
-        self._is_moving = False
+        self._steps_entity = steps_entity
 
     @property
     def device_info(self):
@@ -76,105 +65,35 @@ class AdjustableBedCover(CoverEntity):
             "name": DEVICE_NAME,
             "manufacturer": MANUFACTURER,
             "model": MODEL,
-            "connections": {
-                ("bluetooth", self.entry.data["address"])
-            },
         }
+
+    def _get_steps(self) -> int:
+        state = self.hass.states.get(self._steps_entity)
+        if state and state.state.isdigit():
+            return int(state.state)
+        return 10  # fallback
+
+    async def _repeat(self, command):
+        steps = self._get_steps()
+        _LOGGER.debug("Moving %s %d steps", command, steps)
+
+        await self.hass.services.async_call(
+            DOMAIN,
+            "repeat_command",
+            {
+                "command": command,
+                "count": steps,
+                "delay_ms": 150,
+            },
+            blocking=True,
+        )
+
+    async def async_open_cover(self, **kwargs):
+        await self._repeat(self._up_cmd)
+
+    async def async_close_cover(self, **kwargs):
+        await self._repeat(self._down_cmd)
 
     @property
     def is_closed(self):
-        """Return True if the cover is closed."""
-        if self._attr_current_cover_position is None:
-            return None
-        return self._attr_current_cover_position == 0
-
-    async def _get_client(self) -> BleakClient:
-        """Get or create a persistent BLE client."""
-        data = self.hass.data[DOMAIN][self.entry.entry_id]
-
-        if data.get("client") and data["client"].is_connected:
-            return data["client"]
-
-        device = async_ble_device_from_address(
-            self.hass, data["address"]
-        )
-        if device is None:
-            raise RuntimeError("BLE device not found")
-
-        _LOGGER.debug("Connecting to bed for cover control")
-
-        client = BleakClient(device)
-        await client.connect(timeout=15)
-
-        data["client"] = client
-        return client
-
-    async def _send_command(self, command_key: str):
-        """Send a single BLE command."""
-        data = self.hass.data[DOMAIN][self.entry.entry_id]
-
-        async with data["lock"]:
-            try:
-                client = await self._get_client()
-                await client.write_gatt_char(
-                    BED_CHAR_UUID,
-                    BED_COMMANDS[command_key],
-                    response=False,
-                )
-            except (BleakError, Exception) as err:
-                _LOGGER.error(
-                    "BLE command failed (%s): %s",
-                    command_key,
-                    err,
-                )
-                if data.get("client"):
-                    try:
-                        await data["client"].disconnect()
-                    except Exception:
-                        pass
-                    data["client"] = None
-                raise
-
-    async def _move_to_position(self, target: int):
-        """Simulate movement to target position."""
-        if self._is_moving:
-            return
-
-        self._is_moving = True
-
-        try:
-            target = max(0, min(100, target))
-
-            while self._attr_current_cover_position != target:
-                if self._attr_current_cover_position < target:
-                    await self._send_command(self._up_cmd)
-                    self._attr_current_cover_position += COVER_MOVE_STEP
-                else:
-                    await self._send_command(self._down_cmd)
-                    self._attr_current_cover_position -= COVER_MOVE_STEP
-
-                self._attr_current_cover_position = max(
-                    0, min(100, self._attr_current_cover_position)
-                )
-
-                self.async_write_ha_state()
-                await asyncio.sleep(COVER_MOVE_DELAY)
-
-        finally:
-            self._is_moving = False
-
-    async def async_open_cover(self, **kwargs):
-        """Fully open (raise) the cover."""
-        await self._move_to_position(100)
-
-    async def async_close_cover(self, **kwargs):
-        """Fully close (lower) the cover."""
-        await self._move_to_position(0)
-
-    async def async_set_cover_position(self, **kwargs):
-        """Move cover to a specific position."""
-        position = kwargs.get("position")
-        if position is None:
-            return
-
-        await self._move_to_position(position)
+        return None  # unknown / optimistic
