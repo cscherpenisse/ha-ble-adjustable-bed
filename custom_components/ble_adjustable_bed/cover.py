@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 from homeassistant.components.cover import (
@@ -29,7 +28,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 name="Head",
                 up_cmd=HEAD_UP_CMD,
                 down_cmd=HEAD_DOWN_CMD,
-                steps_entity="number.bed_head_steps",
+                steps_key="head",
             ),
             AdjustableBedCover(
                 hass,
@@ -37,26 +36,26 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 name="Feet",
                 up_cmd=FEET_UP_CMD,
                 down_cmd=FEET_DOWN_CMD,
-                steps_entity="number.bed_feet_steps",
+                steps_key="feet",
             ),
         ]
     )
 
 
 class AdjustableBedCover(CoverEntity):
-    """Cover without position, step-based movement."""
+    """Cover controlled via step count from NumberEntity."""
 
     _attr_supported_features = (
         CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE
     )
 
-    def __init__(self, hass, entry, name, up_cmd, down_cmd, steps_entity):
+    def __init__(self, hass, entry, name, up_cmd, down_cmd, steps_key):
         self.hass = hass
         self.entry = entry
         self._attr_name = f"{DEVICE_NAME} {name}"
         self._up_cmd = up_cmd
         self._down_cmd = down_cmd
-        self._steps_entity = steps_entity
+        self._steps_key = steps_key
 
     @property
     def device_info(self):
@@ -68,14 +67,19 @@ class AdjustableBedCover(CoverEntity):
         }
 
     def _get_steps(self) -> int:
-        state = self.hass.states.get(self._steps_entity)
-        if state and state.state.isdigit():
-            return int(state.state)
-        return 10  # fallback
+        """Read step value from NumberEntity stored in hass.data."""
+        data = self.hass.data[DOMAIN][self.entry.entry_id]
+        numbers = data.get("numbers", {})
+
+        number_entity = numbers.get(self._steps_key)
+        if number_entity is None:
+            return 10
+
+        return int(number_entity.native_value)
 
     async def _repeat(self, command):
         steps = self._get_steps()
-        _LOGGER.debug("Moving %s %d steps", command, steps)
+        _LOGGER.debug("Executing %s for %d steps", command, steps)
 
         await self.hass.services.async_call(
             DOMAIN,
@@ -83,7 +87,7 @@ class AdjustableBedCover(CoverEntity):
             {
                 "command": command,
                 "count": steps,
-                "delay_ms": 150,
+                "delay_ms": 300,
             },
             blocking=True,
         )
@@ -96,4 +100,4 @@ class AdjustableBedCover(CoverEntity):
 
     @property
     def is_closed(self):
-        return None  # unknown / optimistic
+        return None
