@@ -16,7 +16,7 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 # Platforms that this integration provides
-PLATFORMS = ["button", "cover"]
+PLATFORMS = ["button", "cover", "number"]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
