@@ -21,11 +21,11 @@ class BleAdjustableBedConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(
                     "address",
-                    description={"suggested_value": "AA:BB:CC:DD:EE:FF"},
+                    description={"suggested_value": ""},
                 ): str,
                 vol.Required(
                     "name",
-                    default="Adjustable Bed",
+                    default="Bed from ??",
                 ): str,
             }
         )
