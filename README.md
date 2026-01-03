@@ -3,4 +3,5 @@ An Homeassistant HACS Integration For Adjustable Beds (Tested with Galaxy 26W-N 
 
 <img width="550" height="431" alt="image" src="https://github.com/user-attachments/assets/d558606d-9a7b-4de5-8dcb-5a91d7491375" />
 
-<img width="668" height="719" alt="image" src="https://github.com/user-attachments/assets/7df6b9fc-dfa4-4d57-ae1a-a821eb601239" />
+<img width="669" height="720" alt="image" src="https://github.com/user-attachments/assets/53f17407-e8c5-4c9f-8327-107f8f6c2dac" />
+
