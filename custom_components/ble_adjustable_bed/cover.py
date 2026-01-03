@@ -47,7 +47,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
 class AdjustableBedCover(CoverEntity):
     """Step-based adjustable bed cover."""
-
+    
+    _attr_has_entity_name = True
     _attr_supported_features = (
         CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE
     )
@@ -55,7 +56,8 @@ class AdjustableBedCover(CoverEntity):
     def __init__(self, hass, entry, name, up_cmd, down_cmd, steps_key):
         self.hass = hass
         self.entry = entry
-        self._attr_name = f"{DEVICE_NAME} {name}"
+        self._attr_name = name
+        self._attr_unique_id = f"{entry.entry_id}_{name.lower().replace(' ', '_')}"
         self._up_cmd = up_cmd
         self._down_cmd = down_cmd
         self._steps_key = steps_key
