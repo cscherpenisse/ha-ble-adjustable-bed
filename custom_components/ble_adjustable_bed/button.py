@@ -36,12 +36,14 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
 class AdjustableBedButton(ButtonEntity):
     _attr_icon = "mdi:bed"
-
+    _attr_has_entity_name = True
+    
     def __init__(self, hass, entry, key, name):
         self.hass = hass
         self.entry = entry
         self.key = key
         self._attr_name = name
+        self._attr_unique_id = f"{entry.entry_id}_{name.lower().replace(' ', '_')}"
 
         data = hass.data[DOMAIN][entry.entry_id]
         if data["lock"] is None:
