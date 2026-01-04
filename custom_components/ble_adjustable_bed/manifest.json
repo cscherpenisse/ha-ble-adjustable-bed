@@ -7,6 +7,6 @@
   "dependencies": ["bluetooth"],
   "codeowners": ["@cscherpenisse"],
   "iot_class": "local_polling",
-  "platforms": ["button", "cover", "number"],
+  "platforms": ["button", "cover", "number", "sensor"],
   "config_flow": true
 }
