@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from homeassistant.components.cover import (
@@ -47,7 +48,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
 class AdjustableBedCover(CoverEntity):
     """Step-based adjustable bed cover."""
-    
+
     _attr_has_entity_name = True
     _attr_supported_features = (
         CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE
@@ -62,6 +63,10 @@ class AdjustableBedCover(CoverEntity):
         self._down_cmd = down_cmd
         self._steps_key = steps_key
 
+        data = hass.data[DOMAIN][entry.entry_id]
+        if data.get("cover_tasks") is None:
+            data["cover_tasks"] = set()
+
     @property
     def device_info(self):
         return {
@@ -73,7 +78,6 @@ class AdjustableBedCover(CoverEntity):
                 ("bluetooth", self.entry.data["address"])
             },
         }
-
 
     def _get_steps(self) -> int:
         """
@@ -111,22 +115,36 @@ class AdjustableBedCover(CoverEntity):
             return fallback
 
     async def _repeat(self, command):
+        """Repeat a command in a cancellable task."""
+        data = self.hass.data[DOMAIN][self.entry.entry_id]
         steps = self._get_steps()
 
-        _LOGGER.info(
-            "Executing command %s for %d steps", command, steps
-        )
+        async def _runner():
+            _LOGGER.info(
+                "Executing command %s for %d steps", command, steps
+            )
+            try:
+                await self.hass.services.async_call(
+                    DOMAIN,
+                    "repeat_command",
+                    {
+                        "command": command,
+                        "count": steps,
+                        "delay_ms": COVER_MOVE_DELAY_MS,
+                    },
+                    blocking=True,
+                )
+            except asyncio.CancelledError:
+                _LOGGER.info("Cover movement cancelled")
+                raise
 
-        await self.hass.services.async_call(
-            DOMAIN,
-            "repeat_command",
-            {
-                "command": command,
-                "count": steps,
-                "delay_ms": COVER_MOVE_DELAY_MS,
-            },
-            blocking=True,
-        )
+        task = asyncio.create_task(_runner())
+        data["cover_tasks"].add(task)
+
+        def _cleanup(t):
+            data["cover_tasks"].discard(t)
+
+        task.add_done_callback(_cleanup)
 
     async def async_open_cover(self, **kwargs):
         """Move bed part up."""
