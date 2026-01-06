@@ -46,11 +46,13 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
 
 class AdjustableBedCover(CoverEntity):
-    """Step-based adjustable bed cover."""
+    """Step-based adjustable bed cover with STOP support."""
 
     _attr_has_entity_name = True
     _attr_supported_features = (
-        CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE
+        CoverEntityFeature.OPEN
+        | CoverEntityFeature.CLOSE
+        | CoverEntityFeature.STOP
     )
 
     def __init__(self, hass, entry, name, up_cmd, down_cmd, steps_key):
@@ -90,6 +92,7 @@ class AdjustableBedCover(CoverEntity):
             return 10 * STEP_MULTIPLIER
 
     async def _repeat(self, command):
+        """Start a cancellable repeat task."""
         data = self.hass.data[DOMAIN][self.entry.entry_id]
         steps = self._get_steps()
 
@@ -107,7 +110,7 @@ class AdjustableBedCover(CoverEntity):
                     blocking=True,
                 )
             except asyncio.CancelledError:
-                _LOGGER.info("Cover movement cancelled")
+                _LOGGER.debug("Cover movement cancelled")
 
         task = asyncio.create_task(_runner())
         data["cover_tasks"].add(task)
@@ -122,6 +125,21 @@ class AdjustableBedCover(CoverEntity):
     async def async_close_cover(self, **kwargs):
         await self._repeat(self._down_cmd)
 
+    async def async_stop_cover(self, **kwargs):
+        """Stop movement immediately."""
+        data = self.hass.data[DOMAIN][self.entry.entry_id]
+
+        _LOGGER.info(
+            "Stopping cover movement for %s",
+            self.entry.data.get("name"),
+        )
+
+        for task in list(data.get("cover_tasks", [])):
+            task.cancel()
+
+        data["cover_tasks"].clear()
+
     @property
     def is_closed(self):
+        """Unknown state (no position feedback)."""
         return None
