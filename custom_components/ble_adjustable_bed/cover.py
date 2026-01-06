@@ -5,6 +5,7 @@ from homeassistant.components.cover import (
     CoverEntity,
     CoverEntityFeature,
 )
+from homeassistant.helpers import entity_registry as er
 
 from .const import (
     DOMAIN,
@@ -66,6 +67,7 @@ class AdjustableBedCover(CoverEntity):
 
         data = hass.data[DOMAIN][entry.entry_id]
         data.setdefault("cover_tasks", set())
+        data.setdefault("active_steps", {})
 
     @property
     def device_info(self):
@@ -80,21 +82,49 @@ class AdjustableBedCover(CoverEntity):
         }
 
     def _get_steps(self) -> int:
-        entity_id = f"number.adjustable_bed_{self._steps_key}_steps"
-        state = self.hass.states.get(entity_id)
+        """Get steps from matching number entity (same config entry)."""
+        registry = er.async_get(self.hass)
 
-        if not state or state.state in ("unknown", "unavailable"):
-            return 100 * STEP_MULTIPLIER
+        for entity in registry.entities.values():
+            if (
+                entity.domain == "number"
+                and entity.platform == DOMAIN
+                and entity.config_entry_id == self.entry.entry_id
+                and entity.original_name
+                == f"{self._steps_key.capitalize()} Steps"
+            ):
+                state = self.hass.states.get(entity.entity_id)
+                if not state or state.state in ("unknown", "unavailable"):
+                    break
 
-        try:
-            return int(float(state.state)) * STEP_MULTIPLIER
-        except ValueError:
-            return 10 * STEP_MULTIPLIER
+                try:
+                    base_steps = int(float(state.state))
+                    total = base_steps * STEP_MULTIPLIER
+                    _LOGGER.debug(
+                        "%s steps: %d × %d = %d",
+                        self._steps_key,
+                        base_steps,
+                        STEP_MULTIPLIER,
+                        total,
+                    )
+                    return total
+                except ValueError:
+                    break
+
+        fallback = 100 * STEP_MULTIPLIER
+        _LOGGER.warning(
+            "Using fallback steps for %s: %d",
+            self._steps_key,
+            fallback,
+        )
+        return fallback
 
     async def _repeat(self, command):
-        """Start a cancellable repeat task."""
         data = self.hass.data[DOMAIN][self.entry.entry_id]
         steps = self._get_steps()
+
+        # 🔍 store active steps for debug sensor
+        data["active_steps"][self._steps_key] = steps
 
         async def _runner():
             try:
@@ -110,7 +140,7 @@ class AdjustableBedCover(CoverEntity):
                     blocking=True,
                 )
             except asyncio.CancelledError:
-                _LOGGER.debug("Cover movement cancelled")
+                _LOGGER.info("Cover movement cancelled")
 
         task = asyncio.create_task(_runner())
         data["cover_tasks"].add(task)
@@ -141,5 +171,4 @@ class AdjustableBedCover(CoverEntity):
 
     @property
     def is_closed(self):
-        """Unknown state (no position feedback)."""
         return None
