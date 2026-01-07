@@ -30,3 +30,21 @@ BED_COMMANDS = {
     "feet_up": bytearray([0x6E, 0x01, 0x00, 0x26, 0x95]),
     "feet_down": bytearray([0x6E, 0x01, 0x00, 0x27, 0x96]),
 }
+
+PRESETS = {
+    "sleep": {
+        "name": "Slapen",
+        "head": None,
+        "feet": None,
+    },
+    "tv": {
+        "name": "TV-kijken",
+        "head": 300,
+        "feet": 150,
+    },
+    "cold": {
+        "name": "Verkouden",
+        "head": 500,
+        "feet": None,
+    },
+}
