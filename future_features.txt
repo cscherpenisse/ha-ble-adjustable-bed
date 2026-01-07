@@ -1,2 +1,0 @@
-- Add stop button in cover entity
-- preset position buttons (anti snoring, open airway, tv)
