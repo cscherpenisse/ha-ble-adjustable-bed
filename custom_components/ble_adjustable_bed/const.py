@@ -39,12 +39,12 @@ PRESETS = {
     },
     "tv": {
         "name": "TV-kijken",
-        "head": 300,
-        "feet": 150,
+        "head": 500,
+        "feet": 50,
     },
     "cold": {
         "name": "Verkouden",
-        "head": 500,
+        "head": 75,
         "feet": None,
     },
 }
